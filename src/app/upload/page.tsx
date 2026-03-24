@@ -7,7 +7,8 @@ import { ArrowLeft, UploadCloud, FileSpreadsheet, CheckCircle2 } from "lucide-re
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [data, setData] = useState<Record<string, unknown>[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -21,7 +22,8 @@ export default function UploadPage() {
         header: true,
         skipEmptyLines: true,
         complete: function (results) {
-          setData(results.data);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setData(results.data as any[]);
         },
       });
     }
