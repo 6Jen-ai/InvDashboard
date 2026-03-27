@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Papa from "papaparse";
 import Link from "next/link";
 import { ArrowLeft, UploadCloud, FileSpreadsheet, CheckCircle2, Download } from "lucide-react";
-import { db, auth } from "@/lib/firebase";
-import { writeBatch, doc, collection } from "firebase/firestore";
 import { formatTickerForApi } from "@/lib/utils";
 
 export default function UploadPage() {
@@ -14,6 +12,25 @@ export default function UploadPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [firebaseLoaded, setFirebaseLoaded] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [firebaseAuth, setFirebaseAuth] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [firebaseDb, setFirebaseDb] = useState<any>(null);
+
+  useEffect(() => {
+    // Dynamically load firebase to prevent SSR execution
+    let isMounted = true;
+    import("@/lib/firebase").then((fb) => {
+      if (isMounted) {
+        setFirebaseAuth(fb.auth);
+        setFirebaseDb(fb.db);
+        setFirebaseLoaded(true);
+      }
+    }).catch(err => console.error("Failed to load Firebase", err));
+
+    return () => { isMounted = false; };
+  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -45,17 +62,22 @@ export default function UploadPage() {
   };
 
   const syncToFirestore = async () => {
-    if (!auth.currentUser) {
+    if (!firebaseLoaded) {
+      alert("Firebase is still loading. Please try again.");
+      return;
+    }
+    
+    if (!firebaseAuth?.currentUser) {
       alert("Error: You must be logged in to sync transactions.");
       return;
     }
 
     setLoading(true);
     try {
+      const { writeBatch, doc, collection } = await import("firebase/firestore");
+      const db = firebaseDb;
       const batch = writeBatch(db);
-      // Wait, let's verify if the path should be `users/${auth.currentUser.uid}/transactions` or just transactions sub-collection
-      // The instruction specifies "transactions sub-collection under the current user's UID in Firestore".
-      const userTransactionsRef = collection(db, "users", auth.currentUser.uid, "transactions");
+      const userTransactionsRef = collection(db, "users", firebaseAuth.currentUser.uid, "transactions");
 
       data.forEach((row) => {
         if (!row.Date || !row.Ticker) return;

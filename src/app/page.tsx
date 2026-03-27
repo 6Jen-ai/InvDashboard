@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PlusCircle, Upload, PieChart, BarChart3, TrendingUp, DollarSign, Activity, RefreshCw } from "lucide-react";
-import DashboardChart from "@/components/DashboardChart";
+import ChartWrapper from "@/components/ChartWrapper";
 
 export default function Home() {
   return (
@@ -35,7 +35,7 @@ export default function Home() {
 
       <div className="bg-surface rounded-3xl p-6 surface-shadow border border-slate-700/30">
         <h2 className="text-xl font-semibold tracking-tight">Portfolio Performance</h2>
-        <DashboardChart />
+        <ChartWrapper />
       </div>
 
       <div className="flex flex-col gap-4">
