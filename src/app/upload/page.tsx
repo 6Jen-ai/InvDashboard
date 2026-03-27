@@ -49,18 +49,6 @@ export default function UploadPage() {
     }
   };
 
-  const handleDownloadTemplate = () => {
-    const csvContent = "Date,Ticker,Type,Quantity,Price,Fees\n2024-01-01,AAPL,BUY,10,150.00,1.50\n2024-01-02,0050,BUY,1000,150.00,20.00\n";
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "template.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const syncToFirestore = async () => {
     if (!firebaseLoaded) {
       alert("Firebase is still loading. Please try again.");
@@ -132,18 +120,15 @@ export default function UploadPage() {
               <h3 className="text-lg font-medium">Select a CSV file</h3>
               <p className="text-sm text-slate-400 mt-1 px-4 mb-4">Ensure your CSV has headers: Date, Ticker, Type, Quantity, Price, Fees</p>
               
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleDownloadTemplate();
-                }}
+              <a
+                href="/template.csv"
+                download
                 className="z-20 relative flex items-center gap-2 touch-target bg-[#1e293b] text-sm text-slate-300 px-4 py-2 rounded-xl hover:bg-[#2a3a54] hover:text-white transition-colors border border-slate-700 mt-2"
+                onClick={(e) => e.stopPropagation()}
               >
                 <Download size={16} />
                 Download Template
-              </button>
+              </a>
               <p className="text-xs text-slate-500 mt-3 max-w-[250px]">
                 Tip: Tickers can be US (e.g., <strong>AAPL</strong>) or Taiwan (e.g., <strong>0050.TW</strong>). Numeric-only tickers will automatically be assigned to Taiwan.
               </p>

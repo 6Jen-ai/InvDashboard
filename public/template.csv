@@ -1,0 +1,3 @@
+Date,Ticker,Type,Quantity,Price,Fees
+2024-01-01,AAPL,BUY,10,150.00,1.50
+2024-01-02,0050,SELL,1000,150.00,20.00
