@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PlusCircle, Upload, PieChart, BarChart3, TrendingUp, DollarSign, Activity, RefreshCw } from "lucide-react";
+import DashboardChart from "@/components/DashboardChart";
 
 export default function Home() {
   return (
@@ -30,6 +31,11 @@ export default function Home() {
           <h2 className="text-sm text-slate-400 mb-1 font-medium">Dividends (YTD)</h2>
           <div className="text-4xl font-bold tracking-tight text-primary font-mono">$0.00</div>
         </Link>
+      </div>
+
+      <div className="bg-surface rounded-3xl p-6 surface-shadow border border-slate-700/30">
+        <h2 className="text-xl font-semibold tracking-tight">Portfolio Performance</h2>
+        <DashboardChart />
       </div>
 
       <div className="flex flex-col gap-4">

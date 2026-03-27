@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatTickerForApi } from "@/lib/utils";
 
 export default function TransactionForm() {
   const [formData, setFormData] = useState({
@@ -20,8 +20,9 @@ export default function TransactionForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Connect Firebase Firestore
-    console.log("Submitting transaction", formData);
-    alert("Transaction added!");
+    const formattedTicker = formatTickerForApi(formData.ticker);
+    console.log("Submitting transaction", { ...formData, ticker: formattedTicker });
+    alert(`Transaction added for ${formattedTicker}!`);
     setFormData(prev => ({ ...prev, ticker: "", quantity: "", price: "", fees: "0" }));
   };
 

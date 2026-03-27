@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Papa from "papaparse";
 import Link from "next/link";
-import { ArrowLeft, UploadCloud, FileSpreadsheet, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, UploadCloud, FileSpreadsheet, CheckCircle2, Download } from "lucide-react";
+import { db, auth } from "@/lib/firebase";
+import { writeBatch, doc, collection } from "firebase/firestore";
+import { formatTickerForApi } from "@/lib/utils";
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -29,15 +32,56 @@ export default function UploadPage() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const csvContent = "Date,Ticker,Type,Quantity,Price,Fees\n2024-01-01,AAPL,BUY,10,150.00,1.50\n2024-01-02,0050,BUY,1000,150.00,20.00\n";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const syncToFirestore = async () => {
+    if (!auth.currentUser) {
+      alert("Error: You must be logged in to sync transactions.");
+      return;
+    }
+
     setLoading(true);
-    // Simulate Firestore sync
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Synced data to firestore:", data);
-    setLoading(false);
-    setSuccess(true);
-    setFile(null);
-    setData([]);
+    try {
+      const batch = writeBatch(db);
+      // Wait, let's verify if the path should be `users/${auth.currentUser.uid}/transactions` or just transactions sub-collection
+      // The instruction specifies "transactions sub-collection under the current user's UID in Firestore".
+      const userTransactionsRef = collection(db, "users", auth.currentUser.uid, "transactions");
+
+      data.forEach((row) => {
+        if (!row.Date || !row.Ticker) return;
+
+        const newDocRef = doc(userTransactionsRef);
+        batch.set(newDocRef, {
+          date: row.Date,
+          ticker: formatTickerForApi(row.Ticker),
+          type: row.Type?.toUpperCase() || "BUY",
+          quantity: Number(row.Quantity) || 0,
+          price: Number(row.Price) || 0,
+          fees: Number(row.Fees) || 0,
+          createdAt: new Date().toISOString(),
+        });
+      });
+
+      await batch.commit();
+      setSuccess(true);
+      setFile(null);
+      setData([]);
+    } catch (error) {
+      console.error("Error syncing to Firestore:", error);
+      alert("Failed to sync data.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,11 +104,27 @@ export default function UploadPage() {
                 type="file"
                 accept=".csv"
                 onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-target"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-target z-10"
               />
               <UploadCloud size={48} className="text-primary mb-3" />
               <h3 className="text-lg font-medium">Select a CSV file</h3>
-              <p className="text-sm text-slate-400 mt-1 px-4">Ensure your CSV has headers: Date, Ticker, Quantity, Price, Fees, Type</p>
+              <p className="text-sm text-slate-400 mt-1 px-4 mb-4">Ensure your CSV has headers: Date, Ticker, Type, Quantity, Price, Fees</p>
+              
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDownloadTemplate();
+                }}
+                className="z-20 relative flex items-center gap-2 touch-target bg-[#1e293b] text-sm text-slate-300 px-4 py-2 rounded-xl hover:bg-[#2a3a54] hover:text-white transition-colors border border-slate-700 mt-2"
+              >
+                <Download size={16} />
+                Download Template
+              </button>
+              <p className="text-xs text-slate-500 mt-3 max-w-[250px]">
+                Tip: Tickers can be US (e.g., <strong>AAPL</strong>) or Taiwan (e.g., <strong>0050.TW</strong>). Numeric-only tickers will automatically be assigned to Taiwan.
+              </p>
             </div>
 
             {file && (
